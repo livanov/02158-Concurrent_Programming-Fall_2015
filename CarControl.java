@@ -6,6 +6,11 @@
 
 
 import java.awt.Color;
+import java.lang.InterruptedException;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 class Gate {
 
@@ -128,10 +133,14 @@ class Car extends Thread {
                 	
                 newpos = nextPos(curpos);
                 
-				// TODO bumping: sem[newpos].p();
-				
-				// TODO alley: if(pos is some of entry points)   Alley.enter(no);
-				
+				// Step1: alley sync
+                if(IsEntryPoint(no, newpos)) {
+                    Alley.enter(no, cd);
+                }
+
+                // Step1: bumping
+                CarControl.posSemaphoreMap.get(newpos).P();
+
                 //  Move to new position 
                 cd.clear(curpos);
                 cd.mark(curpos,newpos,col,no);
@@ -139,27 +148,16 @@ class Car extends Thread {
                 cd.clear(curpos,newpos);
                 cd.mark(newpos,col,no);
 
-				// TODO alley: if(pos is some of leaving points) Alley.leave(no);
-				
-				// TODO bumping: sem[curpos].v();
-				
-                curpos = newpos;	
-            }
-			
-			// TODO: Alley.enter(no) { 
-			//	P(QN);
-			//	if(nrN==0) P(Alley);
-			//	nrN++;
-			//	V(QN);
-			//}
-			
-			// TODO: Alley.leave(no) {
-			//	P(QN);
-			//	nrN--;
-			//	if(nrN==0) V(Alley);
-			//	V(QN);
-			//}
+                // Step1: alley sync
+                if(IsExitPoint(no, newpos)){
+                    Alley.leave(no, cd);
+                }
 
+				// Step1: bumping
+                CarControl.posSemaphoreMap.get(curpos).V();
+
+                curpos = newpos;
+            }
         } catch (Exception e) {
             cd.println("Exception in Car no. " + no);
             System.err.println("Exception in Car no. " + no + ":" + e);
@@ -167,25 +165,78 @@ class Car extends Thread {
         }
     }
 
+    // Step1: alley sync
+    private boolean IsEntryPoint(int no, Pos pos){
+        final Pos exit1to2 = new Pos(8, 0);
+        final Pos exit3to4 = new Pos(9, 2);
+        final Pos exit5to8 = new Pos(1, 0);
+
+        if( 1 <= no && no <= 2 && newpos.equals(exit1to2) )
+            return true;
+        if( 3 <= no && no <= 4 && newpos.equals(exit3to4) )
+            return true;
+        if( 5 <= no && no <= 8 && newpos.equals(exit5to8) )
+            return true;
+
+        return false;
+    }
+
+    // Step1: alley sync
+    private boolean IsExitPoint(int no, Pos pos){
+
+        final Pos exit1to4 = new Pos(1, 1);
+        final Pos exit5to8 = new Pos(10, 2);
+
+        if( 1 <= no && no <= 4 && newpos.equals(exit1to4) )
+            return true;
+        if( 5 <= no && no <= 8 && newpos.equals(exit5to8) )
+            return true;
+
+        return false;
+    }
+
 }
 
 public class CarControl implements CarControlI{
 
-    CarDisplayI cd;           // Reference to GUI
-    Car[]  car;               // Cars
-    Gate[] gate;              // Gates
+    CarDisplayI cd;                         // Reference to GUI
+    Car[]  car;                             // Cars
+    Gate[] gate;                            // Gates
 
-    public CarControl(CarDisplayI cd) {
+    // Step1: bumping
+    public static Map<Pos, Semaphore> posSemaphoreMap;     // Semaphores for each position
+
+    public CarControl(CarDisplayI cd){
         this.cd = cd;
         car  = new  Car[9];
         gate = new Gate[9];
 
+        // Step1: bumping
+        InitializePositionSemaphores();
+
         for (int no = 0; no < 9; no++) {
             gate[no] = new Gate();
             car[no] = new Car(no,cd,gate[no]);
-			// TODO bumping: sem[car[no].pos].p();
+            // Step1: bumping
+            try{
+                posSemaphoreMap.get(car[no].startpos).P();
+            }catch(InterruptedException e){
+
+            }
             car[no].start();
-        } 
+        }
+
+    }
+
+    // Step1: bumping
+    private void InitializePositionSemaphores(){
+        posSemaphoreMap = new HashMap<Pos, Semaphore>();
+
+        for (int i = 0; i < 11; i++){
+            for (int j = 0; j < 12; j++){
+                posSemaphoreMap.put(new Pos(i,j), new Semaphore(1));
+            }
+        }
     }
 
    public void startCar(int no) {
