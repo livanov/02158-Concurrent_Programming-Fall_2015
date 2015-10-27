@@ -137,6 +137,8 @@ class Car extends Thread {
                 if(IsEntryPoint(no, newpos)) {
                     Alley.enter(no, cd);
                 }
+				
+				// TODO: Step 3: enter barrier
 
                 // Step1: bumping
                 CarControl.posSemaphoreMap.get(newpos).P();

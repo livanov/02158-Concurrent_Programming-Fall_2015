@@ -637,7 +637,7 @@ class ControlPanel extends JPanel {
     	barrier_on.setEnabled(false);
        	barrier_off.setEnabled(false);
        	barrier_shutdown.setEnabled(false);
-          }
+    }
     
     public void shutDownEnd() {
     	barrier_on.setEnabled(true);
@@ -648,21 +648,21 @@ class ControlPanel extends JPanel {
     public void disableBridge() {
         // limit_label.setEnabled(false);
         bridge_limit.setEnabled(false);
-   }
+    }
     
     public void enableBridge() {
         // limit_label.setEnabled(false);
         bridge_limit.setEnabled(true);
-   }
+    }
     
-   public void disableLimit() {
+    public void disableLimit() {
        bridge_limit.setEnabled(false);
-   }
+    }
 
-   public void setLimit(int k) {
+    public void setLimit(int k) {
        currentLimit = k;
        if (k - 2 != bridge_limit.getSelectedIndex()) bridge_limit.setSelectedIndex(k - 2 );
-   }
+    }
 
    public void enableLimit(int k) {
        setLimit(k);
