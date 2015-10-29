@@ -1,35 +1,37 @@
-// Step 3: Barrier
+// Step 4: Barrier as a monitor
 class Barrier {
 
-   public void sync() {  }  // Wait for others to arrive (if barrier active)
+   public synchronized void sync() {  }  // Wait for others to arrive (if barrier active)
 
-   public void on() {  }    // Activate barrier
+   public synchronized void on() {  }    // Activate barrier
 
-   public void off() {  }   // Deactivate barrier 
+   public synchronized void off() {  }   // Deactivate barrier 
 
 }
 
 
 //mutex.wait()
 //	count += 1
-//	if count == n:
-//		turnstile2.wait() # lock the second
-//		turnstile.signal() # unlock the first
+//	if (count == n){
+//		readyToGo.wait() # lock the second
+//		waitingToArrive.signal() # unlock the first
+//  }
 //mutex.signal()
 //
-//turnstile.wait() # first turnstile
-//turnstile.signal()
+//waitingToArrive.wait() # first 
+//waitingToArrive.signal()
 //
 //# critical point
 //
 //mutex.wait()
 //	count -= 1
-//	if count == 0:
-//		turnstile.wait() # lock the first
+//	if (count == 0){
+//		waitingToArrive.wait() # lock the first
 //		// Extra B: Shutdown
 //		if(barrierShutdownFlag) barrierOff();
-//		turnstile2.signal() # unlock the second
+//		readyToGo.signal() # unlock the second
+// 	}
 //mutex.signal()
 //
-//turnstile2.wait() # second turnstile
-//turnstile2.signal()
+//readyToGo.wait() # second 
+//readyToGo.signal()

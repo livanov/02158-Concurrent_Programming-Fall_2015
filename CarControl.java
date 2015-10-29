@@ -52,19 +52,21 @@ class Car extends Thread {
     Pos barpos;                      // Barrierpositon (provided by GUI)
     Color col;                       // Car  color
     Gate mygate;                     // Gate at startposition
+	Alley alley;					 // Step 4: Alley as a monitor
 
 
     int speed;                       // Current car speed
     Pos curpos;                      // Current position 
     Pos newpos;                      // New position to go to
 
-    public Car(int no, CarDisplayI cd, Gate g) {
+    public Car(int no, CarDisplayI cd, Gate g, Alley alley) { // Step 4: Alley as a monitor
 
         this.no = no;
         this.cd = cd;
         mygate = g;
         startpos = cd.getStartPos(no);
         barpos = cd.getBarrierPos(no);  // For later use
+		this.alley = alley; 			// Step 4: Alley as a monitor
 
         col = chooseColor();
 
@@ -116,7 +118,12 @@ class Car extends Thread {
         return pos.equals(startpos);
     }
 
-   public void run() {
+	public void killMe(){
+		//amIdying = true;
+		//alley.notifyAll();
+	}
+	
+    public void run() {
         try {
 
             speed = chooseSpeed();
@@ -133,10 +140,10 @@ class Car extends Thread {
                 	
                 newpos = nextPos(curpos);
                 
-				// Step1: alley sync
-                if(IsEntryPoint(no, newpos)) {
-                    Alley.enter(no, cd);
-                }
+				// Step 4: Alley as a monitor
+				if(alley.isEntryPoint(no, newpos)){
+					alley.enter(no);
+				}
 				
 				// TODO: Step 3: enter barrier
 
@@ -150,11 +157,11 @@ class Car extends Thread {
                 cd.clear(curpos,newpos);
                 cd.mark(newpos,col,no);
 
-                // Step1: alley sync
-                if(IsExitPoint(no, newpos)){
-                    Alley.leave(no, cd);
-                }
-
+                // Step 4: Alley as a monitor
+				if(alley.isExitPoint(no, newpos)){
+					alley.leave(no, newpos);
+				}
+				
 				// Step1: bumping
                 CarControl.posSemaphoreMap.get(curpos).V();
 
@@ -167,36 +174,7 @@ class Car extends Thread {
         }
     }
 
-    // Step1: alley sync
-    private boolean IsEntryPoint(int no, Pos pos){
-        final Pos exit1to2 = new Pos(8, 0);
-        final Pos exit3to4 = new Pos(9, 2);
-        final Pos exit5to8 = new Pos(1, 0);
-
-        if( 1 <= no && no <= 2 && newpos.equals(exit1to2) )
-            return true;
-        if( 3 <= no && no <= 4 && newpos.equals(exit3to4) )
-            return true;
-        if( 5 <= no && no <= 8 && newpos.equals(exit5to8) )
-            return true;
-
-        return false;
-    }
-
-    // Step1: alley sync
-    private boolean IsExitPoint(int no, Pos pos){
-
-        final Pos exit1to4 = new Pos(1, 1);
-        final Pos exit5to8 = new Pos(10, 2);
-
-        if( 1 <= no && no <= 4 && newpos.equals(exit1to4) )
-            return true;
-        if( 5 <= no && no <= 8 && newpos.equals(exit5to8) )
-            return true;
-
-        return false;
-    }
-
+   
 }
 
 public class CarControl implements CarControlI{
@@ -204,12 +182,14 @@ public class CarControl implements CarControlI{
     CarDisplayI cd;                         // Reference to GUI
     Car[]  car;                             // Cars
     Gate[] gate;                            // Gates
+	Alley alley;							// Step 4: Alley as a monitor
 
     // Step1: bumping
     public static Map<Pos, Semaphore> posSemaphoreMap;     // Semaphores for each position
 
     public CarControl(CarDisplayI cd){
         this.cd = cd;
+		this.alley = new Alley(cd);		// Step 4: Alley as a monitor
         car  = new  Car[9];
         gate = new Gate[9];
 
@@ -218,7 +198,7 @@ public class CarControl implements CarControlI{
 
         for (int no = 0; no < 9; no++) {
             gate[no] = new Gate();
-            car[no] = new Car(no,cd,gate[no]);
+            car[no] = new Car(no, cd, gate[no], alley);		// Step 4: Alley as a monitor
             // Step1: bumping
             try{
                 posSemaphoreMap.get(car[no].startpos).P();
