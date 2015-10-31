@@ -23,20 +23,21 @@ class Alley{
 		this.cd = cd;
 	}
 
-	public synchronized void enter(int no){
+	public synchronized void enter(Car car){
+		int no = car.getNo();
 		if(1 <= no && no <= 2){  // car going north
 			while(nrShortS > 0){
-				try{ wait(); } catch(InterruptedException ex){ /*if( CarControl) return; */}
+				try{ wait(); } catch(InterruptedException ex){ /*if(car.amIDying) return; */}
 			}
 			nrN++;
 		} else if(3 <= no && no <= 4){ // car going north
 			while(nrLongS > 0){
-				try{ wait(); } catch(InterruptedException ex){ }
+				try{ wait(); } catch(InterruptedException ex){ /*if(car.amIDying) return; */}
 			}
 			nrN++;
 		} else { // car going south
 			while(nrN > 0) {
-				try{ wait(); } catch(InterruptedException ex){ }
+				try{ wait(); } catch(InterruptedException ex){ /*if(car.amIDying) return; */}
 			}
 			nrShortS++;
 			nrLongS++;

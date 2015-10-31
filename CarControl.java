@@ -53,22 +53,30 @@ class Car extends Thread {
     Color col;                       // Car  color
     Gate mygate;                     // Gate at startposition
 	Alley alley;					 // Step 4: Alley as a monitor
-
+	Barrier barrier;
 
     int speed;                       // Current car speed
     Pos curpos;                      // Current position 
     Pos newpos;                      // New position to go to
+	
+	// Step 6: Removing car with monitors
+	boolean inAlley;				 // Flag representing if the car is in the alley;
+	Semaphore mutex;
 
-    public Car(int no, CarDisplayI cd, Gate g, Alley alley) { // Step 4: Alley as a monitor
+    public Car(int no, CarDisplayI cd, Gate g, Alley alley, Barrier barrier) { // Step 4: Alley as a monitor
 
         this.no = no;
         this.cd = cd;
         mygate = g;
         startpos = cd.getStartPos(no);
         barpos = cd.getBarrierPos(no);  // For later use
+		
 		this.alley = alley; 			// Step 4: Alley as a monitor
-
+		this.barrier = barrier;			// Step 4: Barrier as a monitor
+		inAlley = false;				// Step 6: Removing car with monitors
+		
         col = chooseColor();
+		mutex = new Semaphore(1);
 
         // do not change the special settings for car no. 0
         if (no==0) {
@@ -117,11 +125,6 @@ class Car extends Thread {
     boolean atGate(Pos pos) {
         return pos.equals(startpos);
     }
-
-	public void killMe(){
-		//amIdying = true;
-		//alley.notifyAll();
-	}
 	
     public void run() {
         try {
@@ -140,41 +143,73 @@ class Car extends Thread {
                 	
                 newpos = nextPos(curpos);
                 
-				// Step 4: Alley as a monitor
-				if(alley.isEntryPoint(no, newpos)){
-					alley.enter(no);
+				synchronized(this){
+						
+					// Step 4: Alley as a monitor
+					if(alley.isEntryPoint(no, newpos)){
+						alley.enter(this);
+						inAlley = true;
+					}
+					
+					// TODO: Step 3: enter barrier
+					if(barrier.isBehindBarrier(newpos)){
+						barrier.sync();
+					}
+		
+					// Step1: bumping
+					CarControl.posSemaphoreMap.get(newpos).P();
+
+					//  Move to new position 
+					cd.clear(curpos);
+					cd.mark(curpos,newpos,col,no);
+					sleep(speed());
+					cd.clear(curpos,newpos);
+					cd.mark(newpos,col,no);
+
+					// Step 4: Alley as a monitor
+					if(alley.isExitPoint(no, newpos)){
+						alley.leave(no, newpos);
+						inAlley = false;
+					}
+					
+					// Step1: bumping
+					CarControl.posSemaphoreMap.get(curpos).V();
+
+					curpos = newpos;
 				}
-				
-				// TODO: Step 3: enter barrier
-
-                // Step1: bumping
-                CarControl.posSemaphoreMap.get(newpos).P();
-
-                //  Move to new position 
-                cd.clear(curpos);
-                cd.mark(curpos,newpos,col,no);
-                sleep(speed());
-                cd.clear(curpos,newpos);
-                cd.mark(newpos,col,no);
-
-                // Step 4: Alley as a monitor
-				if(alley.isExitPoint(no, newpos)){
-					alley.leave(no, newpos);
-				}
-				
-				// Step1: bumping
-                CarControl.posSemaphoreMap.get(curpos).V();
-
-                curpos = newpos;
             }
-        } catch (Exception e) {
+		} catch(InterruptedException ex){
+			// If car is removed, thread is interrupted, no further actions are required.
+		} catch (Exception e) {
             cd.println("Exception in Car no. " + no);
             System.err.println("Exception in Car no. " + no + ":" + e);
             e.printStackTrace();
         }
     }
 
-   
+	// Step 6: Removing car with monitors
+    public void remove(){
+		
+		//amIDying = true;
+		
+		//alley.notifyAll();
+		
+		
+		
+		synchronized(this){
+			if(inAlley) { 
+				alley.leave(no, curpos);
+			}
+			
+			CarControl.posSemaphoreMap.get(curpos).V();
+			cd.clear(curpos);
+			this.interrupt();
+		}
+	}
+	
+	public int getNo(){
+		return no;
+	}
 }
 
 public class CarControl implements CarControlI{
@@ -183,6 +218,7 @@ public class CarControl implements CarControlI{
     Car[]  car;                             // Cars
     Gate[] gate;                            // Gates
 	Alley alley;							// Step 4: Alley as a monitor
+	Barrier barrier;						// Step 4: Barrier as a monitor	
 
     // Step1: bumping
     public static Map<Pos, Semaphore> posSemaphoreMap;     // Semaphores for each position
@@ -190,6 +226,8 @@ public class CarControl implements CarControlI{
     public CarControl(CarDisplayI cd){
         this.cd = cd;
 		this.alley = new Alley(cd);		// Step 4: Alley as a monitor
+		this.barrier = new Barrier(cd);	// Step 4: Barrier as a monitor
+		
         car  = new  Car[9];
         gate = new Gate[9];
 
@@ -198,7 +236,7 @@ public class CarControl implements CarControlI{
 
         for (int no = 0; no < 9; no++) {
             gate[no] = new Gate();
-            car[no] = new Car(no, cd, gate[no], alley);		// Step 4: Alley as a monitor
+            car[no] = new Car(no, cd, gate[no], alley, barrier);		// Step 4: Alley and barrier as monitors
             // Step1: bumping
             try{
                 posSemaphoreMap.get(car[no].startpos).P();
@@ -230,32 +268,42 @@ public class CarControl implements CarControlI{
     }
 
     public void barrierOn() { 
-        cd.println("Barrier On not implemented in this version");
+		barrier.on();
+        //cd.println("Barrier On not implemented in this version");
     }
 
     public void barrierOff() { 
-        cd.println("Barrier Off not implemented in this version");
+		barrier.off();
+        //cd.println("Barrier Off not implemented in this version");
     }
 
     public void barrierShutDown() { 
-        cd.println("Barrier shut down not implemented in this version");
-        // This sleep is for illustrating how blocking affects the GUI
-        // Remove when shutdown is implemented.
-        try { Thread.sleep(3000); } catch (InterruptedException e) { }
-        // Recommendation: 
-        //   If not implemented call barrier.off() instead to make graphics consistent
+		barrier.shutDown();
     }
 
     public void setLimit(int k) { 
         cd.println("Setting of bridge limit not implemented in this version");
     }
 
+	// Step 6: Removing car with monitors
     public void removeCar(int no) { 
-        cd.println("Remove Car not implemented in this version");
+		
+		if(car[no].isAlive()){
+			car[no].remove();
+		}
     }
 
+	// Step 6: Removing car with monitors
     public void restoreCar(int no) { 
-        cd.println("Restore Car not implemented in this version");
+	
+		if(!car[no].isAlive()){
+			car[no] = new Car(no, cd, gate[no], alley, barrier);
+			try{
+				posSemaphoreMap.get(car[no].startpos).P();
+			} catch(InterruptedException ex){
+			}
+			car[no].start();
+		}
     }
 
     /* Speed settings for testing purposes */
