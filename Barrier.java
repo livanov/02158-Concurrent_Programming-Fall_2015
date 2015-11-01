@@ -9,23 +9,11 @@ class Barrier {
 	private boolean freeToGo = false;
 	private boolean isAboutToShutDown = false;
 	private CarDisplayI cd;
-	private Set<Pos> behindBarrierPositions;
 	
 	public Barrier(CarDisplayI cd){
 		count = 0;
 		barrierOn = false;
-		behindBarrierPositions = new HashSet<Pos>();
 		this.cd = cd;
-		
-		behindBarrierPositions.add(new Pos(5, 3));  // Car No 0
-		behindBarrierPositions.add(new Pos(5, 4));  // Car No 1
-		behindBarrierPositions.add(new Pos(5, 5));  // Car No 2
-		behindBarrierPositions.add(new Pos(5, 6));  // Car No 3
-		behindBarrierPositions.add(new Pos(5, 7));  // Car No 4
-		behindBarrierPositions.add(new Pos(4, 8));  // Car No 5
-		behindBarrierPositions.add(new Pos(4, 9));  // Car No 6
-		behindBarrierPositions.add(new Pos(4, 10)); // Car No 7
-		behindBarrierPositions.add(new Pos(4, 11)); // Car No 8
 	}
 
     public synchronized void sync() {  // Wait for others to arrive (if barrier active)
@@ -83,10 +71,5 @@ class Barrier {
 				try { wait(); } catch (InterruptedException ex) {}
 			}
 		}
-	}
-
-	public boolean isBehindBarrier(Pos pos){
-		
-		return behindBarrierPositions.contains(pos);
 	}
 }

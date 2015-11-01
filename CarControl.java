@@ -152,7 +152,7 @@ class Car extends Thread {
 					}
 					
 					// TODO: Step 3: enter barrier
-					if(barrier.isBehindBarrier(newpos)){
+					if(curpos.equals(barpos)){
 						barrier.sync();
 					}
 		
