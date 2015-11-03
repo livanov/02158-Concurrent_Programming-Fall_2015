@@ -64,7 +64,7 @@ class Car extends Thread {
 	
 	// Step 6: Removing car with monitors
 	boolean inAlley;				 // Flag representing if the car is in the alley;
-	boolean isBeingRemoved;
+	Semaphore isBeingRemoved;
 
     public Car(int no, CarDisplayI cd, Gate g, Alley alley, Barrier barrier) { // Step 4: Alley as a monitor
 
@@ -167,7 +167,7 @@ class Car extends Thread {
                 }
             }
 		} catch(InterruptedException ex){
-            releaseAquiredResources();
+            releaseAcquiredResources();
 		} catch (Exception e) {
             cd.println("Exception in Car no. " + no);
             System.err.println("Exception in Car no. " + no + ":" + e);
@@ -175,7 +175,7 @@ class Car extends Thread {
         }
     }
 
-    private void releaseAquiredResources() {
+    private void releaseAcquiredResources() {
         if(inAlley) {
             alley.leave(this);
         }
@@ -186,6 +186,7 @@ class Car extends Thread {
         }
         CarControl.posSemaphoreMap.get(curpos).V();
         cd.clear(curpos);
+		isBeingRemoved.V();
     }
 
     private void move() throws InterruptedException{
@@ -210,7 +211,9 @@ class Car extends Thread {
     // Step 6: Removing car with monitors
     public void remove(){
 		
-		isBeingRemoved = true;
+		if(isBeingRemoved != null) return; // remove or restore in progress
+		
+		isBeingRemoved = new Semaphore(0);
 		synchronized(alley){
 			alley.notifyAll();
 		}
@@ -294,24 +297,26 @@ public class CarControl implements CarControlI{
     }
 
 	// Step 6: Removing car with monitors
-    public void removeCar(int no) { 
-		
-		if(car[no].isAlive()){
-			car[no].remove();
-		}
+    public synchronized void removeCar(int no) { 
+		car[no].remove();
     }
 
 	// Step 6: Removing car with monitors
-    public void restoreCar(int no) { 
+    public synchronized void restoreCar(int no) { 
 	
-		if(!car[no].isAlive()){
-			car[no] = new Car(no, cd, gate[no], alley, barrier);
-			try{
-				posSemaphoreMap.get(car[no].startpos).P();
-			} catch(InterruptedException ex){
-			}
-			car[no].start();
+		if(car[no].isBeingRemoved == null) return;
+		
+		try{
+			car[no].isBeingRemoved.P();
+		} catch(InterruptedException ex){
 		}
+	
+		car[no] = new Car(no, cd, gate[no], alley, barrier);
+		try{
+			posSemaphoreMap.get(car[no].startpos).P();
+		} catch(InterruptedException ex){
+		}
+		car[no].start();
     }
 
     /* Speed settings for testing purposes */

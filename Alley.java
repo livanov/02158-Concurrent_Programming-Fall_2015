@@ -27,17 +27,17 @@ class Alley{
 		int no = car.no;
 		if(1 <= no && no <= 2){  // car going north
 			while(nrShortS > 0){
-				try{ wait(); if(car.isBeingRemoved) return; } catch(InterruptedException ex){ }
+				try{ wait(); if(car.isBeingRemoved != null) return; } catch(InterruptedException ex){ }
 			}
 			nrN++;	
 		} else if(3 <= no && no <= 4){ // car going north
 			while(nrLongS > 0){
-				try{ wait(); if(car.isBeingRemoved) return; } catch(InterruptedException ex){ }
+				try{ wait(); if(car.isBeingRemoved != null) return; } catch(InterruptedException ex){ }
 			}
 			nrN++;
 		} else { // car going south
 			while(nrN > 0) {
-				try{ wait(); if(car.isBeingRemoved) return; } catch(InterruptedException ex){ }
+				try{ wait(); if(car.isBeingRemoved != null) return; } catch(InterruptedException ex){ }
 			}
 			nrShortS++;
 			nrLongS++;

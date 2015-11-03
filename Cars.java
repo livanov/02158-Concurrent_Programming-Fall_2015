@@ -1265,7 +1265,6 @@ class CarTestWrapper implements CarTestingI {
         );
     }
 
-
     public void barrierOn() {
         EventQueue.invokeLater(new Runnable() {
             public void run() { cars.barrierOn(); }}
@@ -1277,6 +1276,12 @@ class CarTestWrapper implements CarTestingI {
             public void run() { cars.barrierOff(); }}
         );
     }
+	
+	public void setKeep(boolean keep) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() { cars.setKeep(keep); }}
+		);
+	}
 
 
     // This should wait until barrier is off
