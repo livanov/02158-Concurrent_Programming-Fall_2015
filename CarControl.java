@@ -157,14 +157,16 @@ class Car extends Thread {
                     barrier.sync();
                 }
 
-                move();
-
-                // Step 4: Alley as a monitor
-                if (alley.isExitPoint(no, curpos)) {
-                    synchronized (this) {
-                        alley.leave(this);
-                    }
-                }
+				if(!isInterrupted()){
+					move();
+				
+					// Step 4: Alley as a monitor
+					if (alley.isExitPoint(no, curpos)) {
+						synchronized (this) {
+							alley.leave(this);
+						}
+					}
+				}
             }
 		} catch(InterruptedException ex){
             releaseAcquiredResources();
@@ -214,13 +216,14 @@ class Car extends Thread {
 		if(isBeingRemoved != null) return; // remove or restore in progress
 		
 		isBeingRemoved = new Semaphore(0);
-		synchronized(alley){
-			alley.notifyAll();
-		}
-
+		
 		synchronized(this){
 			this.interrupt();
 		}		
+		
+		synchronized(alley){
+			alley.notifyAll();
+		}
 	}
 }
 

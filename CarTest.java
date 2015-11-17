@@ -93,7 +93,7 @@ public class CarTest extends Thread {
 				
 			case 4:
 					
-				cars.println("Test to show barrier shutdown using semaphores");
+				cars.println("Test to show barrier shutdown using semaphores.");
 				
 				cars.startAll();
 				sleep(500);
@@ -109,7 +109,7 @@ public class CarTest extends Thread {
 				
 				cars.setSlow(true);
 				
-				for(int i=5;i<=8;i++){
+				for(int i = 5;i <= 8;i++){
 					cars.startCar(i);
 				}
 				
@@ -126,9 +126,8 @@ public class CarTest extends Thread {
 			
 			case 6:
 			
-				cars.println("Test to show removal car");
+				cars.println("Test to show removal car.");
 				cars.startAll();
-				
 				
 				for (int i = 0; i <= 8; i++){
 					cars.removeCar(i);
