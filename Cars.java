@@ -1276,13 +1276,6 @@ class CarTestWrapper implements CarTestingI {
             public void run() { cars.barrierOff(); }}
         );
     }
-	
-	public void setKeep(boolean keep) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() { cars.setKeep(keep); }}
-		);
-	}
-
 
     // This should wait until barrier is off
     // For this, a one-time semaphore is used (as simple Future)

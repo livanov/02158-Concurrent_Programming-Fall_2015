@@ -24,7 +24,6 @@ interface CarTestingI {
     public void setLimit(int k);              // Set bridge limit value
 
     public void setSlow(boolean slowdown);    // Set slow-down
-	public void setKeep(boolean keep);		  // Set keep
     public void println(String message);      // Print (error) message on GUI
 
     public void setSpeed(int no, int speed);  // Set base speed (no GUI)

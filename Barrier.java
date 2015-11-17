@@ -8,12 +8,10 @@ class Barrier {
 	private boolean barrierOn = false;
 	private boolean freeToGo = false;
 	private boolean isAboutToShutDown = false;
-	private CarDisplayI cd;
 	
-	public Barrier(CarDisplayI cd){
+	public Barrier(){
 		count = 0;
 		barrierOn = false;
-		this.cd = cd;
 	}
 
     public synchronized void sync() {  // Wait for others to arrive (if barrier active)
@@ -65,7 +63,11 @@ class Barrier {
 	}
 	
     public synchronized void shutDown(){ // Shutdown barrier
-		if(!isAboutToShutDown){
+		if(barrierOn && !isAboutToShutDown){
+			if(count == 0) {
+				barrierOn = false;
+				return;
+			}
 			isAboutToShutDown = true;
 			while(isAboutToShutDown) { 
 				try { wait(); } catch (InterruptedException ex) {}
