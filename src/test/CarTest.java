@@ -1,3 +1,5 @@
+package test;
+
 //Prototype implementation of Car Test class
 //Mandatory assignment
 //Course 02158 Concurrent Programming, DTU, Fall 2015
